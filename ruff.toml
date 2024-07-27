@@ -13,6 +13,5 @@ extend-select = [
 	"T", # mypy, type hints
 ]
 extend-fixable = ["D"]
-
-[lint.pydocstyle]
-convention = "google"
+pydocstyle.convention = "google"
+pycodestyle.max-doc-length = 88
