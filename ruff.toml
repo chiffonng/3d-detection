@@ -1,10 +1,10 @@
 
-src = ["src"]
+src            = ["src"]
 target-version = "py310"
 extend-exclude = ["*__init__.py", "*.pyi"]
 
 [format]
-docstring-code-format = true    # format code in docstrings
+docstring-code-format      = true # format code in docstrings
 docstring-code-line-length = 88
 
 [lint]
@@ -13,5 +13,6 @@ extend-select = [
 	"T", # mypy, type hints
 ]
 extend-fixable = ["D"]
+ignore = ["T201"] # print statements OK
 pydocstyle.convention = "google"
 pycodestyle.max-doc-length = 88
