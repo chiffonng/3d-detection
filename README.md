@@ -1,15 +1,39 @@
-Detect cars from point clouds using PointPillarNet from NVIDIA
-
-Current setup requires TAO Launcher CLI
+Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet)
 
 ## TODOS
 
-- [ ] Only pull PointPillarNet from NVIDIA
 - [ ] Use trainable [PointPillarNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet) on NGC
 
-## Setup
+## Setup (UNDER CONSTRUCTION)
 
-## Process data
+Check hardware requirements for [TAO Toolkit](https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#requirements)
+
+Run this script to check for software requirements:
+
+```bash
+bash setup.sh
+```
+
+### Docker
+
+Build the Docker image
+
+```bash
+docker build -t PointPillarNet docker/
+```
+
+Run the Docker container with active changes
+
+```bash
+docker run -it --rm PointPillarNet
+-v $(pwd)/data:/workspace/data
+-v $(pwd):/workspace/
+--gpus all
+```
+
+## Data
+
+Place the raw data in the "data" directory. The data should be in the form of a PLY file.
 
 ```bash
 python3 src/process_data.py data/raw.ply
@@ -27,6 +51,15 @@ For example, to force processing a different file named "file.ply" and limit the
 
 ```bash
 python3 src/process_data.py file.ply -f --points_per_scene 120000
+```
+
+## Train & Fine-tune (UNDER CONSTRUCTION)
+
+```bash
+pointpillarnet train
+-e /path/to/experiment/spec.txt
+-r /path/to/experiment/results
+-k $KEY
 ```
 
 ## Linting and Formatting
