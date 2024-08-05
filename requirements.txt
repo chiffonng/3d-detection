@@ -1,5 +1,5 @@
-numpy<2.0
-pre-commit==3.7.1
+numpy==1.26.4
+pre-commit==3.8.0
 pyyaml==6.0.1
 ruff==0.5.5
 tqdm==4.66.4

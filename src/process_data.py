@@ -1,13 +1,13 @@
 """Turn raw data into KITTI-formatted data, compatible with NVIDIA PointPillars.
 
-See convert_to_kitti_format() for more details.
+See convert_to_kitti_format() and parse_args() for more details.
 """
 
 import argparse as ap
 import sys
 import warnings
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -80,14 +80,14 @@ def is_any_kitti_dir_empty(directory: Optional[str] = None) -> bool:
 
 
 def read_ply_file(
-    file_path: str | Path,
+    file_path: Union[str, Path],
     dtype: Optional[np.dtype] = np.float32,
     num_points: Optional[int] = None,
 ) -> np.ndarray:
     """Read a PLY file (binary format), infer headers, number of points, and data type, and return the point cloud with 4 features: x, y, z, and intensity.
 
     Args:
-        file_path (str | Path): The path to the PLY file.
+        file_path (str or Path): The path to the PLY file.
         dtype (np.dtype, optional): The data type to use for the point cloud. Defaults to np.float32.
         num_points (int, optional): The known number of points in the point cloud. Defaults to None.
 
@@ -154,7 +154,7 @@ def _validate_io_paths(file_path: str, output_dir: str) -> None:
     """Validate the file path and output directory.
 
     Args:
-        file_path (str): The file path to the raw point cloud.
+        file_path (str): The file path to the raw point cloud, compared to the "data" directory.
         output_dir (str): The directory to save the KITTI-formatted data.
 
     Raises:
@@ -170,7 +170,9 @@ def _validate_io_paths(file_path: str, output_dir: str) -> None:
 
     # Validate the output directory
     if output_dir not in KITTI_DIRECTORIES:
-        raise ValueError(f"{output_dir} is not a valid KITTI directory.")
+        raise ValueError(
+            f"{output_dir} is not a valid KITTI directory. Should be one of {KITTI_DIRECTORIES}."
+        )
     elif not Path(output_dir).exists():
         create_kitti_directories()
 
@@ -217,8 +219,19 @@ def convert_to_kitti_format(
         frame.tofile(f"{output_dir}/{i}.bin")
 
 
-def main():
-    """Parse command-line arguments and convert raw data to KITTI-formatted data."""
+def parse_args():
+    """Parse command-line arguments.
+
+    - filepath (required): The file path to the raw point cloud, compared to the project root.
+    - output_dir: The directory to save the KITTI-formatted data, compared to the project root.
+    - force: Whether to overwrite the existing KITTI-formatted data with new data. Default: False.
+    - points_per_scene: Desired number of points per frame. Default: 100000.
+
+    Example usages:
+    ```bash
+    python src/process_data.py data/raw.ply -o data/val/lidar -f --points_per_scene 100000
+    ```
+    """
     parser = ap.ArgumentParser(description="Convert raw data to KITTI-formatted data.")
     parser.add_argument(
         "filepath",  # Required positional argument
@@ -246,7 +259,12 @@ def main():
         help="desired number of points per frame/scene. Default: 100000.",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    """Parse command-line arguments and convert raw data to KITTI-formatted data."""
+    args = parse_args()
 
     if args.force or is_any_kitti_dir_empty():
         convert_to_kitti_format(
