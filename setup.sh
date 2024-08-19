@@ -94,8 +94,9 @@ function check_tao_software_requirements() {
         See: https://www.nvidia.com/download/index.aspx"
         return 1
     else
-        driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | cut -d "." -f 1)
-        if [[ $driver_version -lt 535 ]]; then
+        driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader)
+        driver_major_version=$(echo "$driver_version" | cut -d "." -f 1)
+        if [[ $driver_major_version -lt 535 ]]; then
             error "Unsupported driver version: $driver_version. Driver version >= 535.xx is required."
             return 1
         else
@@ -108,7 +109,13 @@ function check_tao_software_requirements() {
         error "nvidia-container-toolkit not found. Please install nvidia-container-toolkit here: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
         return 1
     else
-        if [[ $(nvidia-container-toolkit --version | cut -d " " -f 3) < 1.3.1 ]]; then
+        nvidia_container_version=$(nvidia-container-toolkit --version | cut -d " " -f 6)
+        nvidia_container_major_version=$(echo "$nvidia_container_version" | cut -d "." -f 1)
+        nvidia_container_minor_version=$(echo "$nvidia_container_version" | cut -d "." -f 2)
+        nvidia_container_patch_version=$(echo "$nvidia_container_version" | cut -d "." -f 3)
+
+        # check if version (X.Y.Z) <= 1.3.1
+        if [[ $nvidia_container_major_version -lt 1 || ($nvidia_container_major_version -eq 1 && $nvidia_container_minor_version -lt 3) || ($nvidia_container_major_version -eq 1 && $nvidia_container_minor_version -eq 3 && $nvidia_container_patch_version -lt 1) ]]; then
             error "Unsupported nvidia-container-toolkit version: $(nvidia-container-toolkit --version). Version >= 1.3.1 is required."
             return 1
         else
@@ -124,7 +131,8 @@ function check_tao_software_requirements() {
         info "python3 found."
         # Check python version >3.7,<=3.10. Only check minor version.
         python_version=$(python3 --version | cut -d " " -f 2)
-        if [[ $(echo "$python_version" | cut -d "." -f 2) -ge 7 && $(echo "$python_version" | cut -d "." -f 2) -le 10 ]]; then
+        python_minor_version=$(echo "$python_version" | cut -d "." -f 2)
+        if [[ $python_minor_version -ge 7 && $python_minor_version -le 10 ]]; then
             info "Python version: $python_version"
         else
             warning "Unsupported python version: $python_version. Python version >3.7,<=3.10 is required."
