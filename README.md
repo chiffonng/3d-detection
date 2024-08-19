@@ -1,8 +1,10 @@
-Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet)
+Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet). All steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html).
 
 ## TODOS
 
+- [ ] Split point cloud data into sensible scenes
 - [ ] Use trainable [PointPillarNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet) on NGC
+- [ ] Run inference on given data
 
 ## Setup (UNDER CONSTRUCTION)
 
@@ -19,10 +21,10 @@ bash setup.sh
 Build the Docker image
 
 ```bash
-docker build -t PointPillarNet docker/
+docker build -t tao_toolkit docker/
 ```
 
-Run the Docker container with active changes
+Run the Docker container with active changes and all GPUs available
 
 ```bash
 docker run -it --rm PointPillarNet
@@ -39,7 +41,7 @@ Place the raw data in the "data" directory. The data should be in the form of a 
 python3 src/process_data.py data/raw.ply
 ```
 
-converts "data/raw.ply" to KITTI format compatible with PointPillarNet
+converts "data/raw.ply" to KITTI format compatible with PointPillarNet [as required](https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html#preparing-the-dataset)
 
 Otherwise, we can provide more arguments to process_data.py
 

@@ -57,7 +57,7 @@ function check_tao_hardware_requirements() {
         fi
     fi
 
-    info "All hardware requirements are met."
+    # If all checks pass, return 0, otherwise don't return anything.
     return 0
 }
 
@@ -198,6 +198,11 @@ function prompt_tao_toolkit_eula() {
     fi
 }
 
+function create_folder_structures() {
+  mkdir -f data
+  mkdir -f models
+  mkdir -f results
+}
 
 # Main function to run quick start.
 function main() {
@@ -212,7 +217,12 @@ function main() {
         eula_status=$?
 
     if [[ $eula_status -eq $success_code ]]; then
+        info "Create folder structure..."
+        create_folder_structures
+
         info "Starting installation..."
+        docker build -t tao_toolkit docker/
+        info "Installation complete."
         # TODO: Add Docker commands to build and run the container.
     fi
 }

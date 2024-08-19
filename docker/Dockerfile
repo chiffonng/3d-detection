@@ -1,8 +1,9 @@
+# https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/containers/tao-toolkit
 FROM nvcr.io/nvidia/tao/tao-toolkit:5.3.0-pyt
 
 # Set the environment variables
 ENV DATA_DIR="/data"
-ENV MODELS_DIR="/pretrained_models"
+ENV MODELS_DIR="/models"
 ENV KEY=tlt_encode
 
 # Working directory
