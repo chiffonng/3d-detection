@@ -2,8 +2,9 @@
 FROM nvcr.io/nvidia/tao/tao-toolkit:5.3.0-pyt
 
 # Set the environment variables
-ENV DATA_DIR="/data"
-ENV MODELS_DIR="/models"
+ENV DATA_DIR="/workspace/data"
+ENV MODELS_DIR="/workspace/models"
+ENV RESULTS_DIR="/workspace/results"
 ENV KEY=tlt_encode
 
 # Working directory
@@ -19,10 +20,10 @@ RUN python3 -m pip install --upgrade pip && \
 COPY . /workspace/
 
 # Run the scripts
-RUN chmod +x /workspace/scripts/*.sh
+# RUN chmod +x /workspace/scripts/*.sh
 
-# Define mount point for data and models inside workspace
-VOLUME ["${DATA_DIR}", "${MODELS_DIR}"]
+# Define mount point for data and models inside container
+VOLUME ["${DATA_DIR}", "${MODELS_DIR}", "${RESULTS_DIR}"]
 
 # Set the entrypoint
-ENTRYPOINT ["bash", "/scripts/docker_entrypoint.sh"]
+ENTRYPOINT ["bash"]

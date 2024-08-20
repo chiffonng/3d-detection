@@ -3,11 +3,12 @@ services:
     build:
       context: docker
       dockerfile: Dockerfile
-    image: tao-toolkit:5.3.0-pyt
-    container_name: pointpillarnet
+    image: tao_toolkit
+    container_name: tao_toolkit
     volumes:
       - ./data:/workspace/data
-      - ./pretrained_models:/workspace/pretrained_models
+      - ./models:/workspace/models
+      - ./results:/workspace/results
     ipc: host # share memory with host
     ulimits:
       memlock: -1

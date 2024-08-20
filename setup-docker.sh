@@ -199,9 +199,27 @@ function prompt_tao_toolkit_eula() {
 }
 
 function create_folder_structures() {
-  mkdir -f data
-  mkdir -f models
-  mkdir -f results
+  mkdir -p data
+  mkdir -p models
+  mkdir -p results
+}
+
+function setup_docker() {
+  # If there is no image, build the image.
+  if ! docker images -a | grep -q "tao_toolkit"; then
+    info "Building docker image..."
+    docker build -t tao_toolkit -f docker/Dockerfile .
+  fi
+  info "Running docker container temporarily. Use 'exit' to stop the container."
+  docker run -it --rm --name tao_toolkit \
+  -v "$(pwd):/workspace/" \
+  -v "$(pwd)/data:/workspace/data" \
+  -v "$(pwd)/models:/workspace/models" \
+  -v "$(pwd)/results:/workspace/results" \
+  --gpus all \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  tao_toolkit
 }
 
 # Main function to run quick start.
@@ -219,11 +237,7 @@ function main() {
     if [[ $eula_status -eq $success_code ]]; then
         info "Create folder structure..."
         create_folder_structures
-
-        info "Starting installation..."
-        docker build -t tao_toolkit docker/
-        info "Installation complete."
-        # TODO: Add Docker commands to build and run the container.
+        setup_docker
     fi
 }
 

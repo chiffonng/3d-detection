@@ -6,31 +6,14 @@ Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog
 - [ ] Use trainable [PointPillarNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet) on NGC
 - [ ] Run inference on given data
 
-## Setup (UNDER CONSTRUCTION)
+## Setup
 
 Check hardware requirements for [TAO Toolkit](https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#requirements)
 
-Run this script to check for software requirements:
+Run this script to check for software requirements, build the Docker image, and create a container.
 
 ```bash
 bash setup.sh
-```
-
-### Docker
-
-Build the Docker image
-
-```bash
-docker build -t tao_toolkit docker/
-```
-
-Run the Docker container with active changes and all GPUs available
-
-```bash
-docker run -it --rm PointPillarNet
--v $(pwd)/data:/workspace/data
--v $(pwd):/workspace/
---gpus all
 ```
 
 ## Data
