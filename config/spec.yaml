@@ -1,0 +1,50 @@
+# See https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html#creating-an-experiment-spec-file
+dataset:
+  class_names: ["Car", "Pedestrian", "Cyclist"]
+  type: "GeneralPCDataset"
+  data_path: "../data/pointpillars"
+  data_split: { "train": train, "test": val }
+  info_path: { "train": [infos_train.pkl], "test": [infos_val.pkl] }
+  balanced_resampling: False
+  point_feature_encoding:
+    {
+      encoding_type: absolute_coordinates_encoding,
+      used_feature_list: ["x", "y", "z", "intensity"],
+      src_feature_list: ["x", "y", "z", "intensity"],
+    }
+  point_cloud_range: [0, -39.68, -3, 69.12, 39.68, 1]
+  data_augmentor:
+    disable_aug_list: ["placeholder"]
+    aug_config_list:
+      - name: gt_sampling
+        db_info_path:
+          - dbinfos_train.pkl
+        preface:
+          { filter_by_min_points: ["Car:5", "Pedestrian:5", "Cyclist:5"] }
+        sample_groups: ["Car:15", "Pedestrian:15", "Cyclist:15"]
+        num_point_features: 4
+        disable_with_fake_lidar: False
+        remove_extra_width: [0.0, 0.0, 0.0]
+        limit_whole_scene: False
+      - name: random_world_flip
+        along_axis_list: ["x"]
+      - name: random_world_rotation
+        world_rot_angle: [-0.78539816, 0.78539816]
+      - name: random_world_scaling
+        world_scale_range: [0.95, 1.05]
+  data_processor:
+    - name: mask_points_and_boxes_outside_range
+      remove_outside_boxes: True
+    - name: shuffle_points
+      shuffle: { "train": True, "test": False }
+    - name: transform_points_to_voxels
+      voxel_size: [0.16, 0.16, 4]
+      max_points_per_voxel: 32
+      max_number_of_voxels: { "train": 16000, "test": 10000 }
+  num_workers: 4
+
+inference:
+  max_points_num: 25000
+  batch_size: 1
+  checkpoint: "/path/to/pointpillar_workspace/33/ckpt/checkpoint_epoch_80.tlt"
+  viz_conf_thresh: 0.1
