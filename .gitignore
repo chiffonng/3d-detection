@@ -164,6 +164,12 @@ cython_debug/
 # Data
 *.ply
 *.bin
+/data
+
+# Models
+*.etlt
+*.tlt
+/models
 
 # VSCode
 *tempCodeRunner*
