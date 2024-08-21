@@ -3,7 +3,6 @@ Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog
 ## TODOS
 
 - [ ] Split point cloud data into sensible scenes
-- [ ] Use trainable [PointPillarNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet) on NGC
 - [ ] Run inference on given data
 
 ## Setup
@@ -38,13 +37,21 @@ For example, to force processing a different file named "file.ply" and limit the
 python3 src/process_data.py file.ply -f --points_per_scene 120000
 ```
 
-## Train & Fine-tune (UNDER CONSTRUCTION)
+## INFERENCE (UNDER CONSTRUCTION)
 
 ```bash
-pointpillarnet train
--e /path/to/experiment/spec.txt
--r /path/to/experiment/results
--k $KEY
+docker run -it --rm --name tao_toolkit \
+  -v "$(pwd):/workspace/" \
+  -v "$(pwd)/data:/workspace/data" \
+  -v "$(pwd)/models:/workspace/models" \
+  --gpus all \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  tao_toolkit \
+  pointpillars evaluate \
+  -e /workspace/specs/pointpillars_inference.yaml \
+  -k tlt_encode \
+  -r results \
 ```
 
 ## Linting and Formatting

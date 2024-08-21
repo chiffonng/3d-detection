@@ -56,7 +56,6 @@ function check_tao_hardware_requirements() {
 
 function check_tao_software_requirements() {
 
-    warnings=()
     info "Check software requirements"
 
     # Check OS, Ubuntu >= 20.04 is required.
@@ -161,14 +160,12 @@ function check_tao_software_requirements() {
         fi
         if ! grep -q "nvcr.io" "$HOME"/.docker/config.json; then
             error "You should login to NGC container registry by running 'docker login -u \"\$oauthtoken\" ${docker_registry}'."
-            error "For more information, please refer to step 3 in this guide: https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#launcher-cli"
+            error "For more information, please refer to step 3 in this guide: https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#launcher-cli
+            OR a dedicated NGC Guide
+            https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#ngc-api-keys"
             return 1
         fi
     fi
-
-    for w in "${warnings[@]}"; do
-        echo -e "\033[1;33mWARNING:\033[0m $w"
-    done
 
     # Successfully checked all dependencies.
     return 0

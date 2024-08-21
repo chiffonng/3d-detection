@@ -1,8 +1,9 @@
 # See https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html#creating-an-experiment-spec-file
+results_dir: "/workspace/results"
 dataset:
-  class_names: ["Car", "Pedestrian", "Cyclist"]
+  class_names: ["Car"]
   type: "GeneralPCDataset"
-  data_path: "../data/pointpillars"
+  data_path: "workspace/data"
   data_split: { "train": train, "test": val }
   info_path: { "train": [infos_train.pkl], "test": [infos_val.pkl] }
   balanced_resampling: False
@@ -21,7 +22,7 @@ dataset:
           - dbinfos_train.pkl
         preface:
           { filter_by_min_points: ["Car:5", "Pedestrian:5", "Cyclist:5"] }
-        sample_groups: ["Car:15", "Pedestrian:15", "Cyclist:15"]
+        sample_groups: ["Car:15"]
         num_point_features: 4
         disable_with_fake_lidar: False
         remove_extra_width: [0.0, 0.0, 0.0]
@@ -43,8 +44,12 @@ dataset:
       max_number_of_voxels: { "train": 16000, "test": 10000 }
   num_workers: 4
 
+model:
+  name: PointPillar
+  pretrained_model_path: "workspace/models/pointpillars_deployable.etlt"
+
 inference:
-  max_points_num: 25000
+  max_points_num: 107000000
   batch_size: 1
-  checkpoint: "/path/to/pointpillar_workspace/33/ckpt/checkpoint_epoch_80.tlt"
+  checkpoint: "/workspace/results/ckpt/checkpoint.tlt"
   viz_conf_thresh: 0.1
