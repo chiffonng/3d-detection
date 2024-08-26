@@ -3,5 +3,4 @@
 pointpillars inference \
 -e /workspace/specs/pointpillars_inference.yaml \
 --key tlt_encode \
---resuts_dir /workspace/results \
---trt_engine /workspace/models/pointpillars_deployable.etlt
+--results_dir /workspace/results

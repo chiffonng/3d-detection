@@ -188,6 +188,7 @@ function prompt_tao_toolkit_eula() {
 }
 
 function create_folder_structures() {
+  info "Create folder structure..."
   mkdir -p data
   mkdir -p models
   mkdir -p results
@@ -225,8 +226,9 @@ function main() {
         eula_status=$?
 
     if [[ $eula_status -eq $success_code ]]; then
-        info "Create folder structure..."
         create_folder_structures
+        # Add "train" argument to download the trainable model.
+        source ./scripts/download_model.sh
         setup_docker
     fi
 }

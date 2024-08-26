@@ -18,6 +18,7 @@ else
 fi
 
 # Download the model
+info "Download pre-trained model..."
 wget --content-disposition $MODEL_URL -O $MODEL_NAME
 unzip $MODEL_NAME -d models
 rm $MODEL_NAME

@@ -216,7 +216,7 @@ def convert_to_kitti_format(
     for i, frame in enumerate(
         tqdm(frames, desc="⏳ Converting to KITTI-formatted data", unit="frames")
     ):
-        frame.tofile(f"{output_dir}/{i}.bin")
+        frame.tofile(f"{output_dir}/{i:06d}.bin")
 
 
 def parse_args():
@@ -242,8 +242,8 @@ def parse_args():
         "-o",
         "--output_dir",
         type=str,
-        default="data/val/lidar",
-        help="directory to save the KITTI-formatted data, compared to the project root.",
+        default="data/lidar",
+        help="directory to save the lidar data, compared to the project root.",
     )
     parser.add_argument(
         "-f",
