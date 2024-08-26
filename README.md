@@ -1,19 +1,16 @@
-Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet). All steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html).
-
-## TODOS
-
-- [ ] Split point cloud data into sensible scenes
-- [ ] Run inference on given data
+Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet). Most steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html).
 
 ## Setup
 
 Check hardware requirements for [TAO Toolkit](https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#requirements)
 
-Run this script to check for software requirements, build the Docker image, and create a container.
+Run this script to check for software requirements, build the Docker image, and create a container
 
 ```bash
 bash setup.sh
 ```
+
+The interactive shell will be available in the container. The code is mounted in the container at `/workspace`.
 
 ## Data
 
@@ -40,18 +37,7 @@ python3 src/process_data.py file.ply -f --points_per_scene 120000
 ## INFERENCE (UNDER CONSTRUCTION)
 
 ```bash
-docker run -it --rm --name tao_toolkit \
-  -v "$(pwd):/workspace/" \
-  -v "$(pwd)/data:/workspace/data" \
-  -v "$(pwd)/models:/workspace/models" \
-  --gpus all \
-  --ipc=host \
-  --ulimit memlock=-1 \
-  tao_toolkit \
-  pointpillars evaluate \
-  -e /workspace/specs/pointpillars_inference.yaml \
-  -k tlt_encode \
-  -r results \
+bash scripts/run_inference.sh
 ```
 
 ## Linting and Formatting

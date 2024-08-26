@@ -3,7 +3,7 @@ results_dir: "/workspace/results"
 dataset:
   class_names: ["Car"]
   type: "GeneralPCDataset"
-  data_path: "workspace/data"
+  data_path: "data"
   data_split: { "train": train, "test": val }
   info_path: { "train": [infos_train.pkl], "test": [infos_val.pkl] }
   balanced_resampling: False
@@ -20,8 +20,7 @@ dataset:
       - name: gt_sampling
         db_info_path:
           - dbinfos_train.pkl
-        preface:
-          { filter_by_min_points: ["Car:5", "Pedestrian:5", "Cyclist:5"] }
+        preface: { filter_by_min_points: ["Car:5"] }
         sample_groups: ["Car:15"]
         num_point_features: 4
         disable_with_fake_lidar: False
@@ -48,8 +47,36 @@ model:
   name: PointPillar
   pretrained_model_path: "workspace/models/pointpillars_deployable.etlt"
 
+train:
+  batch_size: 4
+  num_epochs: 80
+  optimizer: adam_onecycle
+  lr: 0.003
+  weight_decay: 0.01
+  momentum: 0.9
+  moms: [0.95, 0.85]
+  pct_start: 0.4
+  div_factor: 10
+  decay_step_list: [35, 45]
+  lr_decay: 0.1
+  lr_clip: 0.0000001
+  lr_warmup: False
+  warmup_epoch: 1
+  grad_norm_clip: 10
+  resume_training_checkpoint_path: null
+  pruned_model_path: null
+  tcp_port: 18888
+  random_seed: null
+  checkpoint_interval: 1
+  max_checkpoint_save_num: 30
+  merge_all_iters_to_one_epoch: False
+
+evaluate:
+  batch_size: 1
+  checkpoint: "/workspace/results/ckpt/ckpt_eval.tlt" # PLACEHODLER path
+
 inference:
   max_points_num: 107000000
   batch_size: 1
-  checkpoint: "/workspace/results/ckpt/checkpoint.tlt"
+  checkpoint: "/workspace/models/pointpillars_deployable.etlt"
   viz_conf_thresh: 0.1

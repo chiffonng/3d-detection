@@ -191,6 +191,7 @@ function create_folder_structures() {
   mkdir -p data
   mkdir -p models
   mkdir -p results
+  mkdir -p results/ckpt
 }
 
 function setup_docker() {
