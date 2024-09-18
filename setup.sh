@@ -198,7 +198,7 @@ function create_folder_structures() {
 function setup_docker() {
   # If there is no image, build the image.
   if ! docker images -a | grep -q "tao_toolkit"; then
-    info "Building docker image..."
+    info "Building docker image. Estimated size: 30GB."
     docker build -t tao_toolkit -f docker/Dockerfile .
   fi
   info "Running docker container temporarily. Use 'exit' to stop the container."
@@ -227,7 +227,8 @@ function main() {
 
     if [[ $eula_status -eq $success_code ]]; then
         create_folder_structures
-        # Add "train" argument to download the trainable model.
+        #! To download the trainable model: source ./scripts/download_model.sh train
+        # shellcheck source=./scripts/download_model.sh
         source ./scripts/download_model.sh
         setup_docker
     fi
