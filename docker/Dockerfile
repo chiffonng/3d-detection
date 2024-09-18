@@ -1,5 +1,5 @@
 # https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/containers/tao-toolkit
-FROM nvcr.io/nvidia/tao/tao-toolkit:5.5.0-pyt
+FROM nvcr.io/nvidia/tao/tao-toolkit:5.3.0-pyt
 
 # Set the environment variables
 ENV DATA_DIR="/workspace/data"
