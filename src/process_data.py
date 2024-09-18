@@ -150,6 +150,47 @@ def verify_point_cloud(pcd: np.ndarray) -> None:
     ), "Intensity should be in the range [0, 1]."
 
 
+def generate_dummy_labels(lidar_folder: str | Path, num_objects: int = 1):
+    """Generate dummy labels for each LIDAR file in the specified folder. Reference: https://github.com/NVIDIA/tao_pytorch_backend/blob/main/nvidia_tao_pytorch/pointcloud/pointpillars/pcdet/datasets/general/pc_dataset.py#L150.
+
+    Args:
+        lidar_folder (str or Path): Path, from project root, to the folder containing LIDAR .bin files.
+        num_objects (int): Number of dummy objects to generate for each LIDAR file. Default: 1
+    """
+    # Convert to Path objects if not already
+    lidar_folder = get_absolute_path(lidar_folder)
+    label_folder = lidar_folder.parent / "label"
+
+    # Ensure the label directory exists
+    label_folder.mkdir(parents=True, exist_ok=True)
+
+    # Iterate over each LIDAR file to create a corresponding dummy label file
+    for lidar_file in lidar_folder.glob("*.bin"):
+        # Create a corresponding .txt file for labels
+        label_file_name = lidar_file.stem + ".txt"
+        label_file_path = label_folder / label_file_name
+
+        with open(label_file_path, "w") as f:
+            # Generate dummy objects for each file
+            for _ in range(num_objects):
+                # Define dummy values
+                obj_type = "Car"
+                truncated = 0.0
+                occluded = 0
+                alpha = 0.0
+                bbox = "0.0 0.0 50.0 50.0"  # 2D bbox: x_min, y_min, x_max, y_max
+                dimensions = "1.5 1.5 4.0"  # h w l in meters
+                location = "0.0 0.0 0.0"  # x, y, z
+                rotation_y = 0.0
+                score = 0.0  # confidence score
+
+                # Write the dummy object to the label file
+                label_str = f"{obj_type} {truncated} {occluded} {alpha} {bbox} {dimensions} {location} {rotation_y} {score}\n"
+                f.write(label_str)
+
+    print(f"🏷️ Dummy labels generated for all LIDAR files in {lidar_folder}.")
+
+
 def _validate_io_paths(file_path: str, output_dir: str) -> None:
     """Validate the file path and output directory.
 
@@ -218,6 +259,8 @@ def convert_to_kitti_format(
     ):
         frame.tofile(f"{output_dir}/{i:06d}.bin")
 
+    generate_dummy_labels(output_dir)
+
 
 def parse_args():
     """Parse command-line arguments.
@@ -242,7 +285,7 @@ def parse_args():
         "-o",
         "--output_dir",
         type=str,
-        default="data/lidar",
+        default="data/val/lidar",
         help="directory to save the lidar data, compared to the project root.",
     )
     parser.add_argument(
