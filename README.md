@@ -1,20 +1,16 @@
-Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet). All steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html).
-
-## TODOS
-
-- [ ] Split point cloud data into sensible scenes
-- [ ] Use trainable [PointPillarNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet) on NGC
-- [ ] Run inference on given data
+Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet), TAO Toolkit 5.5 with Pytorch. Most steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/cv_finetuning/pytorch/point_cloud/pointpillars.html).
 
 ## Setup
 
 Check hardware requirements for [TAO Toolkit](https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#requirements)
 
-Run this script to check for software requirements, build the Docker image, and create a container.
+Run this script to check for software requirements, build the Docker image, and create a container. The interactive shell will be available in the container.
 
 ```bash
 bash setup.sh
 ```
+
+By default, the script downloads deployable model from NGC for inference. To switch to trainable model, see the comment "#!" in the script.
 
 ## Data
 
@@ -35,16 +31,13 @@ python3 src/process_data.py --help
 For example, to force processing a different file named "file.ply" and limit the number of points per scene to 120000:
 
 ```bash
-python3 src/process_data.py file.ply -f --points_per_scene 120000
+python3 src/process_data.py data/file.ply -f --points_per_scene 120000
 ```
 
-## Train & Fine-tune (UNDER CONSTRUCTION)
+## INFERENCE (UNDER CONSTRUCTION)
 
 ```bash
-pointpillarnet train
--e /path/to/experiment/spec.txt
--r /path/to/experiment/results
--k $KEY
+bash scripts/run_inference.sh
 ```
 
 ## Linting and Formatting
@@ -52,7 +45,6 @@ pointpillarnet train
 This repo uses [Ruff](https://docs.astral.sh/ruff/) for both linting and formatting Python code. Running `pre-commit` hook on staged files before committing is recommended.
 
 ```bash
-pip install -r requirements.txt
 pre-commit install
 pre-commit run --all-files
 ```

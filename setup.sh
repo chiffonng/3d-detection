@@ -5,16 +5,8 @@
 success_code=0 # 1 for failure
 set -e
 
-# Utility functions for colorcoding messages.
-function info() {
-    echo -e "\033[1;32mINFO:\033[0m $1"
-}
-function error() {
-    echo -e "\033[1;31mERROR:\033[0m $1"
-}
-function warning() {
-    echo -e "\033[1;33mWARNING:\033[0m $1"
-}
+chmod +x scripts/*.sh
+source ./scripts/utils.sh
 
 function check_tao_hardware_requirements() {
     warning "Checking hardware requirements.
@@ -64,7 +56,6 @@ function check_tao_hardware_requirements() {
 
 function check_tao_software_requirements() {
 
-    warnings=()
     info "Check software requirements"
 
     # Check OS, Ubuntu >= 20.04 is required.
@@ -169,14 +160,12 @@ function check_tao_software_requirements() {
         fi
         if ! grep -q "nvcr.io" "$HOME"/.docker/config.json; then
             error "You should login to NGC container registry by running 'docker login -u \"\$oauthtoken\" ${docker_registry}'."
-            error "For more information, please refer to step 3 in this guide: https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#launcher-cli"
+            error "For more information, please refer to step 3 in this guide: https://docs.nvidia.com/tao/tao-toolkit/text/tao_toolkit_quick_start_guide.html#launcher-cli
+            OR a dedicated NGC Guide
+            https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#ngc-api-keys"
             return 1
         fi
     fi
-
-    for w in "${warnings[@]}"; do
-        echo -e "\033[1;33mWARNING:\033[0m $w"
-    done
 
     # Successfully checked all dependencies.
     return 0
@@ -193,21 +182,23 @@ function prompt_tao_toolkit_eula() {
         info "EULA accepted."
         return 0
     else
-        error "EULA not accepted. Not continuing with installation."
+        error "EULA not accepted. Don't start installation."
         return 1
     fi
 }
 
 function create_folder_structures() {
+  info "Create folder structure..."
   mkdir -p data
   mkdir -p models
   mkdir -p results
+  mkdir -p results/ckpt
 }
 
 function setup_docker() {
   # If there is no image, build the image.
   if ! docker images -a | grep -q "tao_toolkit"; then
-    info "Building docker image..."
+    info "Building docker image. Estimated size: 30GB."
     docker build -t tao_toolkit -f docker/Dockerfile .
   fi
   info "Running docker container temporarily. Use 'exit' to stop the container."
@@ -235,8 +226,10 @@ function main() {
         eula_status=$?
 
     if [[ $eula_status -eq $success_code ]]; then
-        info "Create folder structure..."
         create_folder_structures
+        #! To download the trainable model: source ./scripts/download_model.sh train
+        # shellcheck source=./scripts/download_model.sh
+        source ./scripts/download_model.sh
         setup_docker
     fi
 }
