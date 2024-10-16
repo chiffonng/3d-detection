@@ -3,7 +3,6 @@
 import logging
 import sys
 import open3d as o3d
-import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn.cluster import HDBSCAN
