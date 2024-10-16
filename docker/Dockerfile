@@ -14,7 +14,9 @@ WORKDIR /workspace
 # Install dependencies
 COPY requirements.txt /workspace/
 RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install -r requirements.txt && \
+    pip install -e . && \
+    rm -rf /root/.cache
 
 # Copy the source code to workspace
 COPY . /workspace/
