@@ -12,6 +12,14 @@ bash setup.sh
 
 By default, the script downloads deployable model from NGC for inference. To switch to trainable model, see the comment "#!" in the script.
 
+### Semantic Segmentation
+
+Use Python >= 3.10 for better data type hints.
+
+```bash
+pip install -r requirements-seg.txt
+```
+
 ## Data
 
 Place the raw data in the "data" directory. The data should be in the form of a PLY file.
