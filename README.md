@@ -1,7 +1,7 @@
 # 3D Object Detection & Semantic Segmentation
 
-`src/detection`: Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet), TAO Toolkit 5.3 with Pytorch. Most steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/cv_finetuning/pytorch/point_cloud/pointpillars.html).
-`src/segmentation`: Codebase for semantic segmentation of point clouds, using HDBSCAN clustering, and (planned) PointNet++.
+- `src/detection`: Detect cars from point clouds using [PointPillarNet from NVIDIA](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/pointpillarnet), TAO Toolkit 5.3 with Pytorch. Most steps produced here are based on NVIDIA's [PointPillars guide](https://docs.nvidia.com/tao/tao-toolkit/text/cv_finetuning/pytorch/point_cloud/pointpillars.html).
+- `src/segmentation`: Codebase for semantic segmentation of point clouds, using HDBSCAN clustering, and (planned) PointNet++.
 
 ## Setup
 
@@ -51,11 +51,19 @@ python3 src/detection/process_data.py data/file.ply -f --points_per_scene 120000
 
 ## INFERENCE
 
-Currently inference with PointPillarNet is NOT running because there is no `.pth` checkpoint available, which is required in the `run_inference.sh` script. The script is provided for reference.
+Currently **inference is NOT running** because there is no `.pth` PyTorch model checkpoint available, which is required to run the inference script. This is the problem for both TAO 5.3 and 5.5 (latest); we can only download the deployable model `.etlt` or trainable model `.tlt`.
+
+The script is provided for reference.
 
 ```bash
 bash scripts/run_inference.sh
 ```
+
+Considerations:
+
+- Train on the labeled data to obtain the checkpoint OR
+- Use TensorRT for inference & deployment (faster)
+- Other issues are documented in [Github Issues](https://github.com/chiffonng/3d-detection/issues)
 
 ## Linting and Formatting
 

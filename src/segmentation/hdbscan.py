@@ -1,94 +1,130 @@
-"""Apply HDBSCAN clustering to a point cloud."""
+"""Apply HDBSCAN clustering to a point cloud and save the clustered point cloud.
+
+1. Load the point cloud from a file.
+2. Downsample the point cloud using voxel grid filtering.
+3. Apply HDBSCAN clustering to the downsampled point cloud data.
+4. Propagate the labels from the downsampled points to the original point cloud using nearest neighbors.
+5. Save the clustered point cloud to a file in parallel.
+"""
 
 import logging
-import sys
-import open3d as o3d
-import numpy as np
 
+import open3d as o3d
+from open3d import PointCloud  # for type hinting
 from sklearn.cluster import HDBSCAN
+from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from sklearn.utils import resample
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.addHandler(logging.FileHandler("logs/hdbscan.log"))
 
 
-def apply_hdbscan(
-    pcd: np.ndarray, min_cluster_size: int = 60, min_samples: int = 15
-) -> np.ndarray:
-    """Apply HDBSCAN clustering to the point cloud data.
+def load_point_cloud(file_path: str) -> PointCloud:
+    """Load a point cloud from a file."""
+    logger.info(f"Loading point cloud from {file_path}")
+    return o3d.io.read_point_cloud(file_path)
 
-    Args:
-        pcd (np.ndarray): The point cloud data.
-        min_cluster_size (int): Minimum size for a cluster to be considered valid.
-        min_samples (int): Minimum number of points for a core point.
 
-    Returns:
-        np.ndarray: An array of labels for each point in the point cloud.
-    """
+def downsample_point_cloud(
+    pcd: PointCloud, voxel_size: float
+) -> o3d.geometry.PointCloud:
+    """Downsample the point cloud using voxel grid filtering."""
+    logger.info(f"Downsampling point cloud with voxel size {voxel_size}")
+    return pcd.voxel_down_sample(voxel_size=voxel_size)
+
+
+def apply_hdbscan(pcd: PointCloud, min_cluster_size: int, min_samples: int) -> list:
+    """Apply HDBSCAN clustering directly to the point cloud data using Open3D's accessors."""
     logger.info(
-        f"Starting HDBSCAN clustering with min_cluster_size={min_cluster_size}, min_samples={min_samples}"
+        f"Clustering with HDBSCAN (min_cluster_size={min_cluster_size}, min_samples={min_samples})"
     )
+    points = pcd.points  # Get direct reference without converting to a NumPy array
 
-    # Normalize the data for clustering
+    # Standardize the point cloud data
     scaler = StandardScaler()
-    pcd_scaled = scaler.fit_transform(pcd)
+    scaled_points = scaler.fit_transform(points)
 
-    # Apply HDBSCAN with parallel processing
+    # Apply HDBSCAN
     hdb_clusterer = HDBSCAN(
         min_cluster_size=min_cluster_size, min_samples=min_samples, n_jobs=-1
     )
-    labels = hdb_clusterer.fit_predict(pcd_scaled)
-    num_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    num_noise = list(labels).count(-1)
+    labels = hdb_clusterer.fit_predict(scaled_points)
 
     logger.info(
-        f"HDBSCAN clustering complete. Found {num_clusters} clusters and {num_noise} noise points."
+        f"Clustering complete: found {len(set(labels)) - (1 if -1 in labels else 0)} clusters"
     )
     return labels
 
 
-def main(file_path: str, do_subset: bool = True, n_samples: int = 50000):
-    """Main function to load point cloud, apply HDBSCAN clustering, and visualize the results.
+def propagate_labels_to_o3d(
+    original_pcd: PointCloud,
+    downsampled_pcd: PointCloud,
+    downsampled_labels: list[int],
+) -> list[int]:
+    """Propagate labels from the downsampled point cloud to the original point cloud."""
+    logger.info("Propagating labels using nearest neighbors")
+    original_points = original_pcd.points
 
-    Args:
-        file_path (str): Path to the point cloud file.
-        do_subset (bool): Whether to take a subset of the point cloud for testing.
-        n_samples (int): Number of samples to take if subset is True.
-    """
-    # Load the point cloud
-    pcd = o3d.io.read_point_cloud(file_path)
-    logger.info(f"Loaded point cloud with dimensions: {np.asarray(pcd.points).shape}")
+    # Fit nearest neighbors
+    nn = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(downsampled_pcd.points)
+    _, indices = nn.kneighbors(original_points)
 
-    # Subset for faster testing
-    points = np.asarray(pcd.points)
-    if do_subset:
-        logger.info(
-            f"Taking a subset of {n_samples} points from the point cloud for testing..."
+    # Use the nearest label
+    return [downsampled_labels[i[0]] for i in indices]
+
+
+def save_clustered_pcd_ply(
+    pcd: PointCloud,
+    labels: list,
+    output_path: str,
+    chunk_size: int = 10000,
+):
+    """Save the clustered point cloud to a PLY file."""
+    logger.info(f"Saving clustered point cloud to {output_path}")
+    num_points = len(pcd.points)
+    with open(output_path, "w") as f:
+        f.write(f"ply\nformat ascii 1.0\nelement vertex {num_points}\n")
+        f.write(
+            "property float x\nproperty float y\nproperty float z\nproperty int cluster\nend_header\n"
         )
-        points = resample(points, n_samples=n_samples)
 
-    # Apply HDBSCAN on the subset
-    labels = apply_hdbscan(points)
+        # Save points in chunks to reduce memory usage
+        for i in tqdm(range(0, num_points, chunk_size), desc="Saving chunks"):
+            lines = (
+                f"{pcd.points[j][0]} {pcd.points[j][1]} {pcd.points[j][2]} {labels[j]}\n"
+                for j in range(i, min(i + chunk_size, num_points))
+            )
+            f.writelines(lines)
 
-    # #! Avoid memory issues by visualizing in chunks. Currently not working since Open3D cannot visualize large point clouds.
-    # logger.info("Assigning colors to clusters for visualization...")
-    # max_label = max(labels)
-    # colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
-    # colors[labels < 0] = [0, 0, 0, 1]
+    logger.info(f"File saved: {output_path}")
 
-    # # Assign colors to Open3D point cloud in smaller batches
-    # pcd_subset = o3d.geometry.PointCloud()
-    # pcd_subset.points = o3d.utility.Vector3dVector(points)
-    # pcd_subset.colors = o3d.utility.Vector3dVector(colors[:, :3])
 
-    # # Visualize the result
-    # logger.info("Visualizing the point cloud with clusters...")
-    # o3d.visualization.draw_geometries([pcd_subset])
+def main(
+    file_path: str,
+    output_path: str,
+    voxel_size: float = 0.1,
+    min_cluster_size: int = 1000,
+    min_samples: int = 100,
+):
+    """Main function to cluster and save the point cloud."""
+    # Load and downsample the point cloud
+    pcd = load_point_cloud(file_path)
+    logger.info(f"Loaded point cloud with {len(pcd.points)} points")
 
-    return labels
+    downsampled_pcd = downsample_point_cloud(pcd, voxel_size)
+    logger.info(f"Downsampled point cloud to {len(downsampled_pcd.points)} points")
+
+    # Apply HDBSCAN clustering
+    downsampled_labels = apply_hdbscan(downsampled_pcd, min_cluster_size, min_samples)
+
+    # Propagate the cluster labels to the original point cloud
+    full_labels = propagate_labels_to_o3d(pcd, downsampled_pcd, downsampled_labels)
+
+    # Save the clustered point cloud
+    save_clustered_pcd_ply(pcd, full_labels, output_path)
 
 
 if __name__ == "__main__":
-    main("data/pc1.prc.ply", do_subset=True)
+    main("data/raw.ply", "data/clustered_output.ply")
