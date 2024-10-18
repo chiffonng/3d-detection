@@ -4,17 +4,20 @@ See convert_to_kitti_format() and parse_args() for more details.
 """
 
 import argparse as ap
+import logging
 import sys
 import warnings
 from pathlib import Path
-from typing import List, Optional, Union
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 from tqdm import tqdm
 
-from src.utils import get_absolute_path, has_file_ext
+from detection.utils import get_absolute_path, has_file_ext
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 KITTI_DIRECTORIES = [
     "data/train/lidar",
@@ -24,7 +27,7 @@ KITTI_DIRECTORIES = [
 ]
 
 
-def create_kitti_directories() -> List[Path]:
+def create_kitti_directories() -> list[Path]:
     """Create the KITTI-formatted directories.
 
     data/
@@ -44,7 +47,7 @@ def create_kitti_directories() -> List[Path]:
     Source: https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html
 
     Returns:
-        List[str | Path]: List of KITTI directories created
+        list[str | Path]: list of KITTI directories created
     """
     created_dirs = []
     for directory in KITTI_DIRECTORIES:
@@ -54,13 +57,13 @@ def create_kitti_directories() -> List[Path]:
     return created_dirs
 
 
-def is_any_kitti_dir_empty(directory: Optional[str] = None) -> bool:
+def is_any_kitti_dir_empty(directory: str | None = None) -> bool:
     """Check if none of the KITTI-formatted directories are empty. Or check if a specific KITTI directory is empty.
 
     - lidar/ must have at least one .bin file.
 
     Args:
-        directory (Optional[str]): The directory (compared to project root) to check. If None, check all KITTI directories.
+        directory (str): The directory (compared to project root) to check. If None, check all KITTI directories.
 
     Returns:
         bool: Whether the KITTI-formatted directories are empty
@@ -80,21 +83,25 @@ def is_any_kitti_dir_empty(directory: Optional[str] = None) -> bool:
 
 
 def read_ply_file(
-    file_path: Union[str, Path],
-    dtype: Optional[np.dtype] = np.float32,
-    num_points: Optional[int] = None,
+    file_path: str | Path,
+    dtype: np.dtype = np.float32,
+    num_features: int = 4,
 ) -> np.ndarray:
     """Read a PLY file (binary format), infer headers, number of points, and data type, and return the point cloud with 4 features: x, y, z, and intensity.
 
     Args:
         file_path (str or Path): The path to the PLY file.
         dtype (np.dtype, optional): The data type to use for the point cloud. Defaults to np.float32.
-        num_points (int, optional): The known number of points in the point cloud. Defaults to None.
+        num_features (int, optional): The number of features per point. Defaults to 4.
 
     Returns:
         np.ndarray: The point cloud with shape (N, 4).
     """
     file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    elif file_path.suffix != ".ply":
+        raise ValueError(f"Invalid file format. Expected .ply, got {file_path.suffix}")
 
     with open(file_path, "rb") as f:
         # Read the header
@@ -125,13 +132,19 @@ def read_ply_file(
         # Read the data using inferred dtype
         pcd = np.fromfile(file_path, dtype=dtype, offset=len(header) + 1)
 
-        if pcd.shape[0] != num_points * 4:
+        # Reshape to (N, num_features)
+        if len(pcd) % num_features != 0:
             raise ValueError(
-                f"Expected {num_points} points with 4 features each, got {pcd.shape[0]}."
+                f"Number of points is not divisible by the number of features. Make sure {num_features} is correct: {num_points} % {num_features} = 0"
             )
+        else:
+            pcd = pcd.reshape((-1, num_features))
 
-        # Reshape to (N, 4) assuming 4 features per point
-        return pcd.reshape((-1, 4))
+        logger.info(
+            f"📦 Loaded {num_points} points from '{file_path}' Dimensions: {pcd.shape}"
+        )
+
+        return pcd
 
 
 def verify_point_cloud(pcd: np.ndarray) -> None:
@@ -148,6 +161,47 @@ def verify_point_cloud(pcd: np.ndarray) -> None:
     assert np.all(
         (intensity >= 0) & (intensity <= 1)
     ), "Intensity should be in the range [0, 1]."
+
+
+def generate_dummy_labels(lidar_folder: str | Path, num_objects: int = 1):
+    """Generate dummy labels for each LIDAR file in the specified folder. Reference: https://github.com/NVIDIA/tao_pytorch_backend/blob/main/nvidia_tao_pytorch/pointcloud/pointpillars/pcdet/datasets/general/pc_dataset.py#L150.
+
+    Args:
+        lidar_folder (str or Path): Path, from project root, to the folder containing LIDAR .bin files.
+        num_objects (int): Number of dummy objects to generate for each LIDAR file. Default: 1
+    """
+    # Convert to Path objects if not already
+    lidar_folder = get_absolute_path(lidar_folder)
+    label_folder = lidar_folder.parent / "label"
+
+    # Ensure the label directory exists
+    label_folder.mkdir(parents=True, exist_ok=True)
+
+    # Iterate over each LIDAR file to create a corresponding dummy label file
+    for lidar_file in lidar_folder.glob("*.bin"):
+        # Create a corresponding .txt file for labels
+        label_file_name = lidar_file.stem + ".txt"
+        label_file_path = label_folder / label_file_name
+
+        with open(label_file_path, "w") as f:
+            # Generate dummy objects for each file
+            for _ in range(num_objects):
+                # Define dummy values
+                obj_type = "Car"
+                truncated = 0.0
+                occluded = 0
+                alpha = 0.0
+                bbox = "0.0 0.0 50.0 50.0"  # 2D bbox: x_min, y_min, x_max, y_max
+                dimensions = "1.5 1.5 4.0"  # h w l in meters
+                location = "0.0 0.0 0.0"  # x, y, z
+                rotation_y = 0.0
+                score = 0.0  # confidence score
+
+                # Write the dummy object to the label file
+                label_str = f"{obj_type} {truncated} {occluded} {alpha} {bbox} {dimensions} {location} {rotation_y} {score}\n"
+                f.write(label_str)
+
+    logger.info(f"🏷️ Dummy labels generated for all LIDAR files in {lidar_folder}.")
 
 
 def _validate_io_paths(file_path: str, output_dir: str) -> None:
@@ -216,7 +270,9 @@ def convert_to_kitti_format(
     for i, frame in enumerate(
         tqdm(frames, desc="⏳ Converting to KITTI-formatted data", unit="frames")
     ):
-        frame.tofile(f"{output_dir}/{i}.bin")
+        frame.tofile(f"{output_dir}/{i:06d}.bin")
+
+    generate_dummy_labels(output_dir)
 
 
 def parse_args():
@@ -243,7 +299,7 @@ def parse_args():
         "--output_dir",
         type=str,
         default="data/val/lidar",
-        help="directory to save the KITTI-formatted data, compared to the project root.",
+        help="directory to save the lidar data, compared to the project root.",
     )
     parser.add_argument(
         "-f",

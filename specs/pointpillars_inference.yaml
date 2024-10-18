@@ -1,8 +1,9 @@
 # See https://docs.nvidia.com/tao/tao-toolkit/text/point_cloud/pointpillars.html#creating-an-experiment-spec-file
+results_dir: "/workspace/results"
 dataset:
-  class_names: ["Car", "Pedestrian", "Cyclist"]
+  class_names: ["Car"]
   type: "GeneralPCDataset"
-  data_path: "../data/pointpillars"
+  data_path: "data"
   data_split: { "train": train, "test": val }
   info_path: { "train": [infos_train.pkl], "test": [infos_val.pkl] }
   balanced_resampling: False
@@ -19,9 +20,8 @@ dataset:
       - name: gt_sampling
         db_info_path:
           - dbinfos_train.pkl
-        preface:
-          { filter_by_min_points: ["Car:5", "Pedestrian:5", "Cyclist:5"] }
-        sample_groups: ["Car:15", "Pedestrian:15", "Cyclist:15"]
+        preface: { filter_by_min_points: ["Car:5"] }
+        sample_groups: ["Car:15"]
         num_point_features: 4
         disable_with_fake_lidar: False
         remove_extra_width: [0.0, 0.0, 0.0]
@@ -43,8 +43,40 @@ dataset:
       max_number_of_voxels: { "train": 16000, "test": 10000 }
   num_workers: 4
 
-inference:
-  max_points_num: 25000
+model:
+  name: PointPillar
+  pretrained_model_path: "workspace/models/pointpillars_deployable.etlt"
+
+train:
+  batch_size: 4
+  num_epochs: 80
+  optimizer: adam_onecycle
+  lr: 0.003
+  weight_decay: 0.01
+  momentum: 0.9
+  moms: [0.95, 0.85]
+  pct_start: 0.4
+  div_factor: 10
+  decay_step_list: [35, 45]
+  lr_decay: 0.1
+  lr_clip: 0.0000001
+  lr_warmup: False
+  warmup_epoch: 1
+  grad_norm_clip: 10
+  resume_training_checkpoint_path: null
+  pruned_model_path: null
+  tcp_port: 18888
+  random_seed: null
+  checkpoint_interval: 1
+  max_checkpoint_save_num: 30
+  merge_all_iters_to_one_epoch: False
+
+evaluate:
   batch_size: 1
-  checkpoint: "/path/to/pointpillar_workspace/33/ckpt/checkpoint_epoch_80.tlt"
+  checkpoint: "/workspace/results/ckpt/ckpt_eval.tlt" # PLACEHODLER path
+
+inference:
+  max_points_num: 107000000
+  batch_size: 1
+  checkpoint: "/workspace/models/pointpillars_deployable.etlt"
   viz_conf_thresh: 0.1
